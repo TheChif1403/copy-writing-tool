@@ -6,13 +6,34 @@ from reportlab.lib.units import cm
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+
 import tempfile
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
 
 # ===== STYLE PDF =====
 styles = getSampleStyleSheet()
-styles.add(ParagraphStyle(name='UnitTitle', fontSize=18, alignment=1, spaceAfter=12))
-styles.add(ParagraphStyle(name='VocabTitle', fontSize=14, spaceAfter=6))
-styles.add(ParagraphStyle(name='DotLine', fontSize=13, leading=19.5))  # 1.5 spacing
+
+styles.add(ParagraphStyle(
+    name='UnitTitle',
+    fontName='Arial',
+    fontSize=18,
+    alignment=1,
+    spaceAfter=12))
+
+styles.add(ParagraphStyle(
+    name='VocabTitle',
+    fontName='Arial',
+    fontSize=14,
+    spaceAfter=6))
+
+styles.add(ParagraphStyle(
+    name='DotLine',
+    fontName='Arial',
+    fontSize=13,
+    leading=19.5))
 
 # ===== Hàm tạo dòng chấm PDF =====
 def dot_groups_pdf(word, per_line, space_count):
