@@ -10,27 +10,31 @@ import tempfile
 styles = getSampleStyleSheet()
 styles.add(ParagraphStyle(name='VocabTitle', fontSize=14, spaceAfter=6))
 styles.add(ParagraphStyle(name='DotLine', fontSize=12, leading=18))
-def dot_line(length=90):
-    return "." * length
 
-def vocab_block(word, meaning):
+def dot_line_by_word(word):
+    length = len(word.replace(" ", "")) * 3
+    one_group = "." * length
+    return f"{one_group}     {one_group}     {one_group}"
+
+
+def vocab_block(word, meaning, repeat):
     elements = []
     title = f"<b>{word}: {meaning}</b>"
     elements.append(Paragraph(title, styles['VocabTitle']))
 
-    for _ in range(4):
-        elements.append(Paragraph(dot_line(), styles['DotLine']))
-    elements.append(Spacer(1, 6))
+    for _ in range(repeat):
+        elements.append(Paragraph(dot_line_by_word(word), styles['DotLine']))
 
-    for _ in range(8):
-        elements.append(Paragraph(dot_line(70), styles['DotLine']))
     elements.append(Spacer(1, 12))
     return elements
+
 
 st.title("📘 Tạo File Luyện Viết Từ Vựng Cho Bé")
 
 unit_name = st.text_input("Tên Unit")
 num_words = st.number_input("Số từ vựng", min_value=1, step=1)
+repeat_count = st.number_input("Mỗi từ copy bao nhiêu dòng?", min_value=1, step=1, value=3)
+
 
 vocab_list = []
 
@@ -52,8 +56,8 @@ if st.button("📄 Tạo file PDF"):
         story.append(Spacer(1, 12))
 
         for word, meaning in vocab_list:
-            story.extend(vocab_block(word, meaning))
-            story.extend(vocab_block(word, meaning))
+            story.extend(vocab_block(word, meaning, repeat_count))
+
 
         doc.build(story)
 
