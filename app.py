@@ -8,23 +8,24 @@ import tempfile
 # ===== Style =====
 styles = getSampleStyleSheet()
 styles.add(ParagraphStyle(name='VocabTitle', fontSize=14, spaceAfter=6))
-styles.add(ParagraphStyle(name='DotLine', fontSize=12, leading=18))
+styles.add(ParagraphStyle(name='DotLine', fontSize=13, leading=19.5))  # 13 * 1.5 = 19.5 line spacing
 
-# ===== Hàm tạo 1 dòng chấm theo số lần lặp trong dòng =====
-def dot_groups(word, per_line):
+# ===== Hàm tạo dòng chấm =====
+def dot_groups(word, per_line, space_count):
     clean_word = word.replace(" ", "")
     length = len(clean_word) * 3
     one_group = "." * length
-    return (" " * 5).join([one_group] * per_line)
+    spaces = " " * space_count
+    return spaces.join([one_group] * per_line)
 
 # ===== Block cho 1 từ =====
-def vocab_block(word, meaning, lines, per_line):
+def vocab_block(word, meaning, lines, per_line, space_count):
     elements = []
     title = f"<b>{word}: {meaning}</b>"
     elements.append(Paragraph(title, styles['VocabTitle']))
 
     for _ in range(lines):
-        elements.append(Paragraph(dot_groups(word, per_line), styles['DotLine']))
+        elements.append(Paragraph(dot_groups(word, per_line, space_count), styles['DotLine']))
 
     elements.append(Spacer(1, 12))
     return elements
@@ -47,7 +48,9 @@ for i in range(int(num_words)):
     lines = col3.number_input(f"Số dòng viết từ {i+1}", min_value=1, step=1, value=3)
     per_line = col4.number_input(f"Mỗi dòng có mấy lần viết từ {i+1}", min_value=1, step=1, value=3)
 
-    vocab_list.append((eng, vie, lines, per_line))
+    space_count = st.number_input(f"Số khoảng trắng giữa các cụm của từ {i+1}", min_value=1, step=1, value=5)
+
+    vocab_list.append((eng, vie, lines, per_line, space_count))
 
 # ===== Nút tạo PDF =====
 if st.button("📄 Tạo file PDF"):
@@ -62,9 +65,9 @@ if st.button("📄 Tạo file PDF"):
         story.append(Paragraph("<b>VOCABULARY</b>", styles['Heading2']))
         story.append(Spacer(1, 12))
 
-        for word, meaning, lines, per_line in vocab_list:
-            if word.strip():  # bỏ qua dòng trống
-                story.extend(vocab_block(word, meaning, lines, per_line))
+        for word, meaning, lines, per_line, space_count in vocab_list:
+            if word.strip():
+                story.extend(vocab_block(word, meaning, lines, per_line, space_count))
 
         doc.build(story)
 
