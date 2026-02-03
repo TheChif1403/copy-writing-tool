@@ -10,12 +10,13 @@ import tempfile
 # ===== FONT PDF =====
 pdfmetrics.registerFont(TTFont('DejaVu', 'DejaVuSans.ttf'))
 
+# ===== STYLE PDF =====
 styles = getSampleStyleSheet()
-styles.add(ParagraphStyle(name='UnitTitle', fontName='DejaVu', fontSize=20, alignment=1, spaceAfter=14))
-styles.add(ParagraphStyle(name='VocabTitle', fontName='DejaVu', fontSize=14, spaceAfter=6))
-styles.add(ParagraphStyle(name='DotLine', fontName='DejaVu', fontSize=13, leading=20))
+styles.add(ParagraphStyle(name='UnitTitle', fontName='DejaVu', fontSize=20, alignment=1, spaceAfter=16))
+styles.add(ParagraphStyle(name='VocabTitle', fontName='DejaVu', fontSize=14, spaceAfter=8))
+styles.add(ParagraphStyle(name='DotLine', fontName='DejaVu', fontSize=13, leading=26))  # 13 x 2 = 26
 
-# ===== Hàm tạo dòng chấm =====
+# ===== TẠO DÒNG CHẤM =====
 def dot_groups(word, per_line, space_count):
     clean_word = word.replace(" ", "")
     length = len(clean_word) * 3
@@ -23,7 +24,7 @@ def dot_groups(word, per_line, space_count):
     spaces = "&nbsp;" * space_count
     return spaces.join([one_group] * per_line)
 
-# ===== GIAO DIỆN =====
+# ===== INPUT =====
 st.title("📘 Tạo File Luyện Viết Từ Vựng Cho Bé")
 
 unit_name = st.text_input("Tên Unit")
@@ -45,39 +46,39 @@ for i in range(int(num_words)):
 
     preview_data.append((eng, vie, lines, per_line, space_count))
 
-# ===== CSS GIẢ LẬP TRANG A4 =====
+# ===== CSS A4 CHUẨN KÍCH THƯỚC PDF =====
 st.markdown("""
 <style>
 .page {
-    width: 21cm;
-    min-height: 29.7cm;
-    padding: 2cm;
+    width: 794px;              /* A4 width at 96dpi */
+    min-height: 1123px;        /* A4 height at 96dpi */
+    padding: 75px;             /* ~2cm margins */
     margin: auto;
-    border: 1px solid #ccc;
     background: white;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    box-shadow: 0 0 6px rgba(0,0,0,0.15);
     font-family: DejaVu Sans, Arial, sans-serif;
 }
 .unit-title {
     text-align: center;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
 }
 .vocab-title {
     font-weight: bold;
-    margin-top: 10px;
+    margin-top: 12px;
+    margin-bottom: 6px;
 }
 .dot-line {
     font-size: 13px;
-    line-height: 1.6;
-    margin-bottom: 6px;
-    word-wrap: break-word;
+    line-height: 2;   /* GIỐNG PDF */
+    margin-bottom: 4px;
+    word-break: break-word;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ===== XEM TRƯỚC A4 =====
+# ===== PREVIEW A4 =====
 st.subheader("👀 Xem trước nội dung in")
 
 html_preview = f"<div class='page'><div class='unit-title'>Unit: {unit_name}</div>"
@@ -89,7 +90,6 @@ for word, meaning, lines, per_line, space_count in preview_data:
             html_preview += f"<div class='dot-line'>{dot_groups(word, per_line, space_count)}</div>"
 
 html_preview += "</div>"
-
 st.markdown(html_preview, unsafe_allow_html=True)
 
 # ===== TẠO PDF =====
@@ -102,14 +102,14 @@ if st.button("📄 Tạo và tải file PDF"):
         story = []
         story.append(Paragraph(f"Unit: {unit_name}", styles['UnitTitle']))
         story.append(Paragraph("<b>VOCABULARY</b>", styles['Heading2']))
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 14))
 
         for word, meaning, lines, per_line, space_count in preview_data:
             if word.strip():
                 story.append(Paragraph(f"<b>{word}: {meaning}</b>", styles['VocabTitle']))
                 for _ in range(lines):
                     story.append(Paragraph(dot_groups(word, per_line, space_count), styles['DotLine']))
-                story.append(Spacer(1, 12))
+                story.append(Spacer(1, 10))
 
         doc_pdf.build(story)
 
