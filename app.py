@@ -3,12 +3,13 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
+from docx import Document
 import tempfile
 
-# ===== Style =====
+# ===== Style PDF =====
 styles = getSampleStyleSheet()
 styles.add(ParagraphStyle(name='VocabTitle', fontSize=14, spaceAfter=6))
-styles.add(ParagraphStyle(name='DotLine', fontSize=13, leading=19.5))  # 13 * 1.5 = 19.5 line spacing
+styles.add(ParagraphStyle(name='DotLine', fontSize=13, leading=19.5))  # line spacing 1.5
 
 # ===== Hàm tạo dòng chấm =====
 def dot_groups(word, per_line, space_count):
@@ -18,8 +19,8 @@ def dot_groups(word, per_line, space_count):
     spaces = " " * space_count
     return spaces.join([one_group] * per_line)
 
-# ===== Block cho 1 từ =====
-def vocab_block(word, meaning, lines, per_line, space_count):
+# ===== Block PDF =====
+def vocab_block_pdf(word, meaning, lines, per_line, space_count):
     elements = []
     title = f"<b>{word}: {meaning}</b>"
     elements.append(Paragraph(title, styles['VocabTitle']))
@@ -29,6 +30,13 @@ def vocab_block(word, meaning, lines, per_line, space_count):
 
     elements.append(Spacer(1, 12))
     return elements
+
+# ===== Block Word =====
+def vocab_block_word(doc, word, meaning, lines, per_line, space_count):
+    doc.add_paragraph(f"{word}: {meaning}").runs[0].bold = True
+    for _ in range(lines):
+        p = doc.add_paragraph(dot_groups(word, per_line, space_count))
+        p.paragraph_format.line_spacing = 1.5
 
 # ===== Giao diện =====
 st.title("📘 Tạo File Luyện Viết Từ Vựng Cho Bé")
@@ -52,12 +60,13 @@ for i in range(int(num_words)):
 
     vocab_list.append((eng, vie, lines, per_line, space_count))
 
-# ===== Nút tạo PDF =====
-if st.button("📄 Tạo file PDF"):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        doc = SimpleDocTemplate(tmp.name, pagesize=A4,
-                                rightMargin=2*cm, leftMargin=2*cm,
-                                topMargin=2*cm, bottomMargin=2*cm)
+# ===== TẠO FILE =====
+if st.button("📄 Tạo file PDF & Word"):
+    # ===== PDF =====
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+        doc_pdf = SimpleDocTemplate(tmp_pdf.name, pagesize=A4,
+                                    rightMargin=2*cm, leftMargin=2*cm,
+                                    topMargin=2*cm, bottomMargin=2*cm)
 
         story = []
         story.append(Paragraph(f"<b>Unit: {unit_name}</b>", styles['Title']))
@@ -67,9 +76,25 @@ if st.button("📄 Tạo file PDF"):
 
         for word, meaning, lines, per_line, space_count in vocab_list:
             if word.strip():
-                story.extend(vocab_block(word, meaning, lines, per_line, space_count))
+                story.extend(vocab_block_pdf(word, meaning, lines, per_line, space_count))
 
-        doc.build(story)
+        doc_pdf.build(story)
 
-        with open(tmp.name, "rb") as f:
-            st.download_button("⬇ Tải PDF", f, file_name=f"{unit_name}_CopyWriting.pdf")
+    # ===== WORD =====
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_word:
+        doc_word = Document()
+        doc_word.add_heading(f"Unit: {unit_name}", level=1)
+        doc_word.add_paragraph("VOCABULARY").runs[0].bold = True
+
+        for word, meaning, lines, per_line, space_count in vocab_list:
+            if word.strip():
+                vocab_block_word(doc_word, word, meaning, lines, per_line, space_count)
+
+        doc_word.save(tmp_word.name)
+
+    # ===== Nút tải =====
+    with open(tmp_pdf.name, "rb") as f:
+        st.download_button("⬇ Tải PDF", f, file_name=f"{unit_name}_CopyWriting.pdf")
+
+    with open(tmp_word.name, "rb") as f:
+        st.download_button("⬇ Tải Word (.docx)", f, file_name=f"{unit_name}_CopyWriting.docx")
