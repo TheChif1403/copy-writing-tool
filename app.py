@@ -3,67 +3,48 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-
 import tempfile
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 
-pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
+# ===== ĐĂNG KÝ FONT TIẾNG VIỆT CHO PDF =====
+pdfmetrics.registerFont(TTFont('DejaVu', 'DejaVuSans.ttf'))
 
 # ===== STYLE PDF =====
 styles = getSampleStyleSheet()
+styles.add(ParagraphStyle(name='UnitTitle', fontName='DejaVu', fontSize=18, alignment=1, spaceAfter=12))
+styles.add(ParagraphStyle(name='VocabTitle', fontName='DejaVu', fontSize=14, spaceAfter=6))
+styles.add(ParagraphStyle(name='DotLine', fontName='DejaVu', fontSize=13, leading=19.5))
 
-styles.add(ParagraphStyle(
-    name='UnitTitle',
-    fontName='Arial',
-    fontSize=18,
-    alignment=1,
-    spaceAfter=12))
-
-styles.add(ParagraphStyle(
-    name='VocabTitle',
-    fontName='Arial',
-    fontSize=14,
-    spaceAfter=6))
-
-styles.add(ParagraphStyle(
-    name='DotLine',
-    fontName='Arial',
-    fontSize=13,
-    leading=19.5))
-
-# ===== Hàm tạo dòng chấm PDF =====
+# ===== TẠO DÒNG CHẤM PDF =====
 def dot_groups_pdf(word, per_line, space_count):
     clean_word = word.replace(" ", "")
     length = len(clean_word) * 3
     one_group = "." * length
-    spaces = "&nbsp;" * space_count  # giữ nguyên khoảng trắng
+    spaces = "&nbsp;" * space_count
     return spaces.join([one_group] * per_line)
 
-# ===== Hàm tạo dòng chấm WORD =====
+# ===== TẠO DÒNG CHẤM WORD =====
 def dot_groups_word(word, per_line, space_count):
     clean_word = word.replace(" ", "")
     length = len(clean_word) * 3
     one_group = "." * length
-    spaces = "\u00A0" * space_count  # non-breaking space
+    spaces = "\u00A0" * space_count
     return spaces.join([one_group] * per_line)
 
-# ===== Block PDF =====
+# ===== BLOCK PDF =====
 def vocab_block_pdf(word, meaning, lines, per_line, space_count):
     elements = []
-    title = f"<b>{word}: {meaning}</b>"
-    elements.append(Paragraph(title, styles['VocabTitle']))
-
+    elements.append(Paragraph(f"<b>{word}: {meaning}</b>", styles['VocabTitle']))
     for _ in range(lines):
         elements.append(Paragraph(dot_groups_pdf(word, per_line, space_count), styles['DotLine']))
-
     elements.append(Spacer(1, 12))
     return elements
 
-# ===== Block WORD =====
+# ===== BLOCK WORD =====
 def vocab_block_word(doc, word, meaning, lines, per_line, space_count):
     p = doc.add_paragraph()
     run = p.add_run(f"{word}: {meaning}")
@@ -75,7 +56,7 @@ def vocab_block_word(doc, word, meaning, lines, per_line, space_count):
         for r in p.runs:
             r.font.size = Pt(13)
 
-# ===== Giao diện =====
+# ===== GIAO DIỆN =====
 st.title("📘 Tạo File Luyện Viết Từ Vựng Cho Bé")
 
 unit_name = st.text_input("Tên Unit")
@@ -91,7 +72,7 @@ for i in range(int(num_words)):
 
     col3, col4 = st.columns(2)
     lines = col3.number_input(f"Số dòng viết từ {i+1}", min_value=1, step=1, value=3)
-    per_line = col4.number_input(f"Mỗi dòng có mấy lần viết từ {i+1}", min_value=1, step=1, value=3)
+    per_line = col4.number_input(f"Mỗi dòng có mấy cụm từ {i+1}", min_value=1, step=1, value=3)
 
     space_count = st.number_input(f"Số khoảng trắng giữa các cụm của từ {i+1}", min_value=1, step=1, value=5)
 
@@ -99,7 +80,7 @@ for i in range(int(num_words)):
 
 # ===== TẠO FILE =====
 if st.button("📄 Tạo file PDF & Word"):
-    # ===== PDF =====
+    # PDF
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
         doc_pdf = SimpleDocTemplate(tmp_pdf.name, pagesize=A4,
                                     rightMargin=2*cm, leftMargin=2*cm,
@@ -116,18 +97,16 @@ if st.button("📄 Tạo file PDF & Word"):
 
         doc_pdf.build(story)
 
-    # ===== WORD =====
+    # WORD
     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_word:
         doc_word = Document()
 
-        # Unit Title
         title = doc_word.add_paragraph(f"Unit: {unit_name}")
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = title.runs[0]
         run.bold = True
         run.font.size = Pt(18)
 
-        # Vocabulary heading
         vocab_head = doc_word.add_paragraph("VOCABULARY")
         vocab_head.runs[0].bold = True
 
@@ -137,7 +116,7 @@ if st.button("📄 Tạo file PDF & Word"):
 
         doc_word.save(tmp_word.name)
 
-    # ===== Download buttons =====
+    # Download
     with open(tmp_pdf.name, "rb") as f:
         st.download_button("⬇ Tải PDF", f, file_name=f"{unit_name}_CopyWriting.pdf")
 
