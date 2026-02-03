@@ -7,21 +7,20 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import tempfile
 
-# ===== FONT TIẾNG VIỆT =====
+# ===== FONT PDF =====
 pdfmetrics.registerFont(TTFont('DejaVu', 'DejaVuSans.ttf'))
 
-# ===== STYLE PDF =====
 styles = getSampleStyleSheet()
-styles.add(ParagraphStyle(name='UnitTitle', fontName='DejaVu', fontSize=18, alignment=1, spaceAfter=12))
+styles.add(ParagraphStyle(name='UnitTitle', fontName='DejaVu', fontSize=20, alignment=1, spaceAfter=14))
 styles.add(ParagraphStyle(name='VocabTitle', fontName='DejaVu', fontSize=14, spaceAfter=6))
-styles.add(ParagraphStyle(name='DotLine', fontName='DejaVu', fontSize=13, leading=19.5))
+styles.add(ParagraphStyle(name='DotLine', fontName='DejaVu', fontSize=13, leading=20))
 
-# ===== TẠO DÒNG CHẤM =====
+# ===== Hàm tạo dòng chấm =====
 def dot_groups(word, per_line, space_count):
     clean_word = word.replace(" ", "")
     length = len(clean_word) * 3
     one_group = "." * length
-    spaces = " " * space_count
+    spaces = "&nbsp;" * space_count
     return spaces.join([one_group] * per_line)
 
 # ===== GIAO DIỆN =====
@@ -46,15 +45,52 @@ for i in range(int(num_words)):
 
     preview_data.append((eng, vie, lines, per_line, space_count))
 
-# ===== XEM TRƯỚC =====
-st.markdown("---")
-st.subheader("👀 Xem trước nội dung")
+# ===== CSS GIẢ LẬP TRANG A4 =====
+st.markdown("""
+<style>
+.page {
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 2cm;
+    margin: auto;
+    border: 1px solid #ccc;
+    background: white;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    font-family: DejaVu Sans, Arial, sans-serif;
+}
+.unit-title {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.vocab-title {
+    font-weight: bold;
+    margin-top: 10px;
+}
+.dot-line {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ===== XEM TRƯỚC A4 =====
+st.subheader("👀 Xem trước nội dung in")
+
+html_preview = f"<div class='page'><div class='unit-title'>Unit: {unit_name}</div>"
 
 for word, meaning, lines, per_line, space_count in preview_data:
     if word.strip():
-        st.markdown(f"**{word}: {meaning}**")
+        html_preview += f"<div class='vocab-title'>{word}: {meaning}</div>"
         for _ in range(lines):
-            st.text(dot_groups(word, per_line, space_count))
+            html_preview += f"<div class='dot-line'>{dot_groups(word, per_line, space_count)}</div>"
+
+html_preview += "</div>"
+
+st.markdown(html_preview, unsafe_allow_html=True)
 
 # ===== TẠO PDF =====
 if st.button("📄 Tạo và tải file PDF"):
